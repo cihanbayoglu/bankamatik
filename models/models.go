@@ -27,13 +27,11 @@ type Kisi struct {
 	Hesaplar []Hesap
 }
 
-func (k Kisi) HesapOlustur(HesapID int) Hesap {
-	hesap := Hesap{ID: HesapID, Sahibi: k, Bakiye: 0, Durum: true}
-	fmt.Println("Oluşturmak istediğiniz hesap türünü seciniz")
-	fmt.Println("1-)tl -- 2-)dolar -- 3-)euro")
-	fmt.Scan(&hesap.Tur)
+func (k Kisi) HesapOlustur(hesapID int, hesapTuru int) {
+	hesap := Hesap{ID: hesapID, Sahibi: k, Tur: hesapTuru, Bakiye: 0, Durum: true}
+	k.Hesaplar = append(k.Hesaplar, hesap)
+	fmt.Println("Hesap Oluşturuldu.")
 
-	return hesap
 }
 
 func (k Kisi) HesapBlokaj(hesap *Hesap, opsiyon bool) {
@@ -156,16 +154,17 @@ func (k Kisi) HesapSil(HesapID int) Hesap {
 	return hesap
 }
 
-func (k Kisi) HesapBirlestir(ana *Hesap, silinecek *Hesap) {
+func (k Kisi) HesapBirlestir(ana *Hesap, silinecek *Hesap, e2 int) {
 	if ana.Tur != silinecek.Tur {
-		println("Sadece aynı tür hesapları birleştirebilirsiniz.")
+		fmt.Println("Sadece aynı tür hesapları birleştirebilirsiniz.")
 
 	} else if !ana.Durum || !silinecek.Durum {
-		println("Bloke hesaplar ile işlem yapılamaz.")
+		fmt.Println("Bloke hesaplar ile işlem yapılamaz.")
 	} else {
 		ana.Bakiye += silinecek.Bakiye
 		fmt.Println("Hesap birleştirme işlemi başarıyla gerçekleştirildi. Ana hesap :")
 		fmt.Printf(" ID: %d , Durum: %t , Tür: %d , Bakiye: %.2f\n", ana.ID, ana.Durum, ana.Tur, ana.Bakiye)
+		k.Hesaplar = append(k.Hesaplar[:e2], k.Hesaplar[e2+1:]...)
 	}
 
 }
