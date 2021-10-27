@@ -7,6 +7,8 @@ const (
 	eur = 10.3
 )
 
+var hesapId int //Hs
+
 //type Hesap struct { ID int Sahibi *Kisi HesapTuru int Bakiye float64 Durum bool
 //false ise bloke hesap olarak hiç bir işlem gerçekleştirememesi gerekmektedir. }
 type Hesap struct {
@@ -27,32 +29,61 @@ type Kisi struct {
 	Hesaplar []Hesap
 }
 
-func (k Kisi) HesapOlustur(hesapID int, hesapTuru int) {
-	hesap := Hesap{ID: hesapID, Sahibi: k, Tur: hesapTuru, Bakiye: 0, Durum: true}
-	k.Hesaplar = append(k.Hesaplar, hesap)
-	fmt.Println("Hesap Oluşturuldu.")
+func HataliMi(kisi *Kisi, input ...int) bool {
+	for i := range input {
+		if input[i] > len(kisi.Hesaplar)-1 || input[i] < 0 {
+
+			return true
+		}
+	}
+	return false
+}
+
+func (k Kisi) HesapOlustur(kisi *Kisi) {
+	var hesapTuru int
+	fmt.Println("Oluşturmak istediğiniz hesap türünü seciniz")
+	fmt.Println("1-)tl -- 2-)dolar -- 3-)euro")
+	fmt.Scan(&hesapTuru)
+	if hesapTuru >= 1 && hesapTuru <= 3 {
+		hesapId++
+		hesap := Hesap{ID: hesapId, Sahibi: *kisi, Tur: hesapTuru, Bakiye: 0, Durum: true}
+		kisi.Hesaplar = append(kisi.Hesaplar, hesap)
+		fmt.Println("Hesap Oluşturuldu.")
+	} else {
+		fmt.Println("Hatalı hesap türü girdiğiniz için hesap oluşturulamadı.")
+	}
 
 }
 
-func (k Kisi) HesapBlokaj(hesap *Hesap, opsiyon bool) {
-	if !opsiyon { // bloke etme işlemi için çalışır.
-		if !hesap.Durum {
-			fmt.Println("Seçmiş olduğunuz hesap halihazırda bloke.")
-		} else {
-			hesap.Durum = false
-			fmt.Printf("ID: %d , Durum: %t , Tür: %d , Bakiye: %.2f\nHesap bloke edilmiştir."+
-				" Artık bu hesapla işlem yapamazsınız.\n", hesap.ID, hesap.Durum, hesap.Tur, hesap.Bakiye)
-		}
-	} else { // bloke kaldırma işlemi için çalışır.
-		if hesap.Durum {
-			fmt.Println("Seçmiş olduğunuz hesap halihazırda bloke değil.")
-		} else {
-			hesap.Durum = true
-			fmt.Printf("ID: %d , Durum: %t , Tür: %d , Bakiye: %.2f\nBloke kaldırılmıştır."+
-				" Artık bu hesapla işlem yapabilirsiniz.\n", hesap.ID, hesap.Durum, hesap.Tur, hesap.Bakiye)
+func (k Kisi) HesapBlokaj() {
+	var hesapNo int
+	var opsiyon bool
+	println("Blokaj işlemi yapılacak hesabı giriniz.")
+	fmt.Scan(&hesapNo)
+	println("Bloke etmek için 0, blokeyi kaldırmak için 1 giriniz.")
+	fmt.Scan(&opsiyon)
+
+	if HataliMi(&k, hesapNo) {
+		println("Yanlış hesap girdiniz.")
+	} else {
+		if !opsiyon { // bloke etme işlemi için çalışır.
+			if !k.Hesaplar[hesapNo].Durum {
+				fmt.Println("Seçmiş olduğunuz hesap halihazırda bloke.")
+			} else {
+				k.Hesaplar[hesapNo].Durum = false
+				fmt.Printf("ID: %d , Durum: %t , Tür: %d , Bakiye: %.2f\nHesap bloke edilmiştir."+
+					" Artık bu hesapla işlem yapamazsınız.\n", k.Hesaplar[hesapNo].ID, k.Hesaplar[hesapNo].Durum, k.Hesaplar[hesapNo].Tur, k.Hesaplar[hesapNo].Bakiye)
+			}
+		} else { // bloke kaldırma işlemi için çalışır.
+			if k.Hesaplar[hesapNo].Durum {
+				fmt.Println("Seçmiş olduğunuz hesap halihazırda bloke değil.")
+			} else {
+				k.Hesaplar[hesapNo].Durum = true
+				fmt.Printf("ID: %d , Durum: %t , Tür: %d , Bakiye: %.2f\nBloke kaldırılmıştır."+
+					" Artık bu hesapla işlem yapabilirsiniz.\n", k.Hesaplar[hesapNo].ID, k.Hesaplar[hesapNo].Durum, k.Hesaplar[hesapNo].Tur, k.Hesaplar[hesapNo].Bakiye)
+			}
 		}
 	}
-
 }
 
 func (k Kisi) ParaGonder(alici *Hesap, gonderici *Hesap, tutar float64) {
@@ -86,6 +117,8 @@ func (k Kisi) ParaCek(hesap *Hesap, tutar float64) {
 	if !hesap.Durum {
 		fmt.Println("Bloke hesap ile herhangi bir işlem yapılamaz.")
 
+	} else if tutar > hesap.Bakiye {
+		fmt.Println("Hesabınızda yeterli bakiye bulunmamaktadır.")
 	} else {
 		hesap.Bakiye -= tutar
 		fmt.Println("İşleminiz başarıyla gerçekleşmiştir.")
@@ -145,14 +178,17 @@ func (k Kisi) DovizBoz(doviz *Hesap, tl *Hesap, tutar float64) {
 	}
 }
 
-func (k Kisi) HesapSil(HesapID int) Hesap {
-	hesap := Hesap{ID: HesapID, Sahibi: k, Bakiye: 0, Durum: true}
-	fmt.Println("Oluşturmak istediğiniz hesap türünü seciniz")
-	fmt.Println("1-)tl -- 2-)dolar -- 3-)euro")
-	fmt.Scan(&hesap.Tur)
+/*func (k Kisi) HesapSil(HesapID int)  {
+	println("Silmek istediğiniz hesabı giriniz")
+	fmt.Scan(&e)
+	if !k.Hesaplar[e].Durum {
+		println("Bloke hesap silinemez.")
 
-	return hesap
-}
+	} else {
+		k.Hesaplar = append(k.Hesaplar[:e], k.Hesaplar[e+1:]...)
+		fmt.Printf("%d. hesabınız silindi.", e)
+	}
+}*/
 
 func (k Kisi) HesapBirlestir(ana *Hesap, silinecek *Hesap, e2 int) {
 	if ana.Tur != silinecek.Tur {
@@ -167,4 +203,11 @@ func (k Kisi) HesapBirlestir(ana *Hesap, silinecek *Hesap, e2 int) {
 		k.Hesaplar = append(k.Hesaplar[:e2], k.Hesaplar[e2+1:]...)
 	}
 
+}
+
+func (k Kisi) BakiyeGoster() {
+	for i := 0; i < len(k.Hesaplar); i++ {
+		fmt.Printf("%d. Hesap , ID: %d , Durum: %t , Tür: %d , Bakiye: %.2f\n",
+			i, k.Hesaplar[i].ID, k.Hesaplar[i].Durum, k.Hesaplar[i].Tur, k.Hesaplar[i].Bakiye)
+	}
 }
