@@ -3,29 +3,46 @@ package main
 import (
 	"bankamatik/models"
 	"fmt"
+	"log"
+	"os"
 )
 
+var Operations = [11]string{
+	"0-)  Çıkış",
+	"1-)  Hesap oluştur",
+	"2-)  Hesap bloke işlemleri",
+	"3-)  Para yatır",
+	"4-)  Para çek",
+	"5-)  Bakiye göster",
+	"6-)  Hesap sil",
+	"7-)  Döviz al",
+	"8-)  Döviz bozdur",
+	"9-)  Para gönder",
+	"10-) Hesap birleştirme",
+}
+
 func main() {
-	i := 1            // Yapılacak işlem numarasını tutar.
-	var e int         // Fonksiyonun 1. değişken değerini tutar.
-	var e2 int        // Fonksiyonun 2. değişken değerini tutar.
-	var tutar float64 // Tutar parametresi alan fonksiyona gönderilecek parametreyi tutar.
+	i := 1              // Yapılacak işlem numarasını tutar.
+	var var1 int        // Fonksiyonun 1. değişken değerini tutar.
+	var var2 int        // Fonksiyonun 2. değişken değerini tutar.
+	var value float64   // value parametresi alan fonksiyona gönderilecek parametreyi tutar.
+	isHappened := false // log için işlemin gerçekleşip gerçekleşmediğini kontrol eder.
 	k := models.Kisi{1, "Cihan", "Bayoğlu", true, nil}
+
+	// log
+	file, err := os.OpenFile("logs.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	log.SetOutput(file)
 
 	for i != 0 {
 		println("\n*********************************\n")
-		println("Yapmak istediğiniz işlemi giriniz")
-		println("1-)  Hesap oluştur")         // 0 hesap gerekli
-		println("2-)  Hesap bloke işlemleri") // 1hesap gerekli
-		println("3-)  Para yatır")            // 1 hesap gerekli
-		println("4-)  Para çek")              // 1 hesap gerekli
-		println("5-)  Bakiye göster")         // 1 hesap gerekli
-		println("6-)  Hesap sil")             // 1 hesap gerekli
-		println("7-)  Döviz al")              // 2 hesap gerekli
-		println("8-)  Döviz bozdur")          // 2 hesap gerekli
-		println("9-)  Para gönder")           // 2 hesap gerekli
-		println("10-) Hesap birleştirme")     // 2 hesap gerekli
-		println("11-)Çıkış  için 0 giriniz.")
+		for operation := range Operations {
+			println(Operations[operation])
+		}
 		println("\n*********************************\n")
 		fmt.Scan(&i)
 
@@ -39,16 +56,17 @@ func main() {
 			switch i {
 			case 0:
 				fmt.Printf("Çıkış yaptınız.")
+				isHappened = true
 				break
 
 			case 1:
-				k.HesapOlustur(&k)
+				isHappened = k.HesapOlustur(&k)
 				break
 
 			case 2:
 				k.BakiyeGoster()
 
-				k.HesapBlokaj()
+				isHappened = k.HesapBlokaj()
 
 				break
 
@@ -56,14 +74,14 @@ func main() {
 				k.BakiyeGoster()
 
 				println("Para yatırılacak hesabı giriniz")
-				fmt.Scan(&e)
+				fmt.Scan(&var1)
 				println("Yatırılacak tutarı giriniz.")
-				fmt.Scan(&tutar)
+				fmt.Scan(&value)
 
-				if models.HataliMi(&k, e) {
+				if models.HataliMi(&k, var1) {
 					println("Yanlış hesap girdiniz.")
 				} else {
-					k.ParaYatir(&k.Hesaplar[e], tutar)
+					isHappened = k.ParaYatir(&k.Hesaplar[var1], value)
 				}
 				break
 
@@ -71,35 +89,36 @@ func main() {
 				k.BakiyeGoster()
 
 				println("Para çekilecek hesabı giriniz")
-				fmt.Scan(&e)
+				fmt.Scan(&var1)
 				println("Çekilecek tutarı giriniz.")
-				fmt.Scan(&tutar)
+				fmt.Scan(&value)
 
-				if models.HataliMi(&k, e) {
+				if models.HataliMi(&k, var1) {
 					println("Yanlış hesap girdiniz.")
 				} else {
-					k.ParaCek(&k.Hesaplar[e], tutar)
+					isHappened = k.ParaCek(&k.Hesaplar[var1], value)
 				}
 				break
 
 			case 5:
-				k.BakiyeGoster()
+				isHappened = k.BakiyeGoster()
 				break
 
 			case 6: //hesapsil
 				k.BakiyeGoster()
 
 				println("Silmek istediğiniz hesabı giriniz")
-				fmt.Scan(&e)
-				if models.HataliMi(&k, e) {
+				fmt.Scan(&var1)
+				if models.HataliMi(&k, var1) {
 					println("Yanlış hesap girdiniz.")
 
-				} else if !k.Hesaplar[e].Durum {
+				} else if !k.Hesaplar[var1].Durum {
 					println("Bloke hesap silinemez.")
 
 				} else {
-					k.Hesaplar = append(k.Hesaplar[:e], k.Hesaplar[e+1:]...)
-					fmt.Printf("%d. hesabınız silindi.", e)
+					k.Hesaplar = append(k.Hesaplar[:var1], k.Hesaplar[var1+1:]...)
+					fmt.Printf("%d. hesabınız silindi.", var1)
+					isHappened = true
 				}
 
 				break
@@ -107,15 +126,15 @@ func main() {
 				k.BakiyeGoster()
 
 				println("döviz hesabı giriniz")
-				fmt.Scan(&e)
+				fmt.Scan(&var1)
 				println("tl hesabı giriniz")
-				fmt.Scan(&e2)
+				fmt.Scan(&var2)
 				println("Döviz alınacak tutarı giriniz (tl)")
-				fmt.Scan(&tutar)
-				if models.HataliMi(&k, e, e2) {
+				fmt.Scan(&value)
+				if models.HataliMi(&k, var1, var2) {
 					println("Yanlış hesap girdiniz.")
 				} else {
-					k.DovizAl(&k.Hesaplar[e], &k.Hesaplar[e2], tutar)
+					isHappened = k.DovizAl(&k.Hesaplar[var1], &k.Hesaplar[var2], value)
 				}
 				break
 
@@ -123,16 +142,16 @@ func main() {
 				k.BakiyeGoster()
 
 				println("döviz hesabı giriniz")
-				fmt.Scan(&e)
+				fmt.Scan(&var1)
 				println("tl hesabı giriniz")
-				fmt.Scan(&e2)
+				fmt.Scan(&var2)
 				println("Bozdurulacak döviz tutarı tutarını giriniz ")
-				fmt.Scan(&tutar)
+				fmt.Scan(&value)
 
-				if models.HataliMi(&k, e, e2) {
+				if models.HataliMi(&k, var1, var2) {
 					println("Yanlış hesap girdiniz.")
 				} else {
-					k.DovizBoz(&k.Hesaplar[e], &k.Hesaplar[e2], tutar)
+					isHappened = k.DovizBoz(&k.Hesaplar[var1], &k.Hesaplar[var2], value)
 				}
 				break
 
@@ -140,16 +159,16 @@ func main() {
 				k.BakiyeGoster()
 
 				println("Alıcı hesabı giriniz")
-				fmt.Scan(&e)
+				fmt.Scan(&var1)
 				println("Gönderici hesabı giriniz")
-				fmt.Scan(&e2)
+				fmt.Scan(&var2)
 				println("Gönderilecek tutarı giriniz")
-				fmt.Scan(&tutar)
+				fmt.Scan(&value)
 
-				if models.HataliMi(&k, e, e2) {
+				if models.HataliMi(&k, var1, var2) {
 					println("Yanlış hesap girdiniz.")
 				} else {
-					k.ParaGonder(&k.Hesaplar[e], &k.Hesaplar[e2], tutar)
+					isHappened = k.ParaGonder(&k.Hesaplar[var1], &k.Hesaplar[var2], value)
 				}
 
 				break
@@ -158,14 +177,14 @@ func main() {
 				k.BakiyeGoster()
 
 				println("ana hesabı giriniz")
-				fmt.Scan(&e)
+				fmt.Scan(&var1)
 				println("İçeriği ana hesaba aktarılacak hesabı giriniz. (Bu hesap işlem sonunda silinecektir.)")
-				fmt.Scan(&e2)
+				fmt.Scan(&var2)
 
-				if models.HataliMi(&k, e, e2) {
+				if models.HataliMi(&k, var1, var2) {
 					println("Yanlış hesap girdiniz.")
 				} else {
-					k.HesapBirlestir(&k.Hesaplar[e], &k.Hesaplar[e2], e2)
+					isHappened = k.HesapBirlestir(&k.Hesaplar[var1], &k.Hesaplar[var2], var2)
 				}
 
 				break
@@ -175,6 +194,10 @@ func main() {
 				break
 			}
 		}
+		if isHappened {
+			log.Println(Operations[i])
+		}
+
 	}
 
 }
